@@ -51,13 +51,14 @@ async def part2_guardrails():
     print("(LLM-as-Judge / NeMo — optional, skipped)")
 
 
-async def part3_assignment_suite():
+async def part3_assignment_suite(*, blue_preview: bool = False):
     """Checkpoint 3: defense suite → outputs/results.json."""
     print("\n" + "=" * 60)
     print("CHECKPOINT 3: Assignment suite → outputs/*.json")
     print("=" * 60)
 
     from assignment.pipeline import (
+        BlueProviderError,
         build_production_plugins,
         build_observability,
         run_assignment_suite,
@@ -67,10 +68,13 @@ async def part3_assignment_suite():
         plugins = build_production_plugins(use_llm_judge=False)
         audit, monitor = build_observability()
         pipeline = {"plugins": plugins, "audit": audit, "monitor": monitor}
-        result = await run_assignment_suite(pipeline)
+        result = await run_assignment_suite(pipeline, preview=blue_preview)
         print("Suite finished.")
-        print("Wrote outputs under repo outputs/")
+        output_dir = "outputs/cp3-preview/" if blue_preview else "outputs/"
+        print(f"Wrote outputs under {output_dir}")
         return result
+    except BlueProviderError as error:
+        raise SystemExit(str(error)) from None
     except NotImplementedError as e:
         print(
             "Chưa xong Checkpoint 3 (src/assignment/pipeline.py). "
@@ -133,8 +137,8 @@ async def part4_attacks():
     }
 
 
-async def main(parts=None):
-    setup_api_key()
+async def main(parts=None, *, blue_preview: bool = False):
+    setup_api_key(blue_preview=blue_preview)
 
     if parts is None:
         parts = [2, 3, 4]  # Core: CP2 → CP3 → CP4
@@ -143,7 +147,7 @@ async def main(parts=None):
         if part == 2:
             await part2_guardrails()
         elif part == 3:
-            await part3_assignment_suite()
+            await part3_assignment_suite(blue_preview=blue_preview)
         elif part == 4:
             await part4_attacks()
         else:
@@ -167,9 +171,16 @@ if __name__ == "__main__":
         choices=[2, 3, 4],
         help="2=CP2 guardrails · 3=CP3 suite · 4=CP4 red-team",
     )
+    parser.add_argument(
+        "--blue-preview",
+        action="store_true",
+        help="Run CP3 via openrouter/free and write to outputs/cp3-preview/",
+    )
     args = parser.parse_args()
+    if args.blue_preview and args.part != 3:
+        parser.error("--blue-preview requires --part 3")
 
     if args.part:
-        asyncio.run(main(parts=[args.part]))
+        asyncio.run(main(parts=[args.part], blue_preview=args.blue_preview))
     else:
         asyncio.run(main())

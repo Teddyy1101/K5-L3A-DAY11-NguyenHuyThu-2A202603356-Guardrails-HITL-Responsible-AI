@@ -23,7 +23,6 @@ from core.config import (
     red_uses_openai_sdk,
     red_uses_gemini,
     red_provider_label,
-    blue_provider_label,
     get_red_model_default,
 )
 from core.utils import chat_with_agent
@@ -96,8 +95,8 @@ def create_red_agent_default():
     )
 
 
-def create_blue_agent(plugins: list):
-    """Blue — ALWAYS OpenRouter liquid/lfm-2.5-2.6b:free + student plugins."""
+def create_blue_agent(plugins: list, *, preview: bool = False):
+    """Create Blue with the student plugins and the selected CP3 run mode."""
     from core.openai_runtime import create_blue_pair
 
     agent, runner = create_blue_pair(
@@ -105,11 +104,10 @@ def create_blue_agent(plugins: list):
         instruction=BLUE_INSTRUCTION,
         app_name="blue_agent",
         plugins=plugins,
+        preview=preview,
     )
-    print(
-        f"Blue created WITH guardrails! "
-        f"[Blue:{blue_provider_label()}]"
-    )
+    mode = "Blue preview" if preview else "Blue"
+    print(f"Blue created WITH guardrails! [{mode}:{runner.provider}:{runner.model}]")
     return agent, runner
 
 

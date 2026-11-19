@@ -1,5 +1,48 @@
 # Day 11 — Controlled Agent Security (2026)
 
+## Thông tin bài nộp
+
+| | |
+|---|---|
+| **Họ tên** | Nguyễn Huy Thứ |
+| **MSSV** | 2A202603356 |
+| **Lớp** | K5 · L3A · Day 11 |
+| **Repo** | `K5-L3A-DAY11-NguyenHuyThu-2A202603356-Guardrails-HITL-Responsible-AI` |
+
+### Cách chạy
+
+Chạy từ gốc repo (Windows PowerShell, Python 3.12):
+
+```powershell
+py -3.12 -m venv .venv
+$LabPython = '.\.venv\Scripts\python.exe'
+& $LabPython -m pip install -r requirements.txt
+Copy-Item .env.example .env   # điền OPENROUTER_API_KEY, RED_TEAM_PROVIDER=openai, OPENAI_API_KEY
+
+& $LabPython src/main.py --part 2                  # CP2 — thử input/output guardrails (in terminal)
+& $LabPython src/main.py --part 3 --blue-preview   # CP3 — pipeline Blue → outputs/cp3-preview/
+Copy-Item .\outputs\cp3-preview\*.json .\outputs\
+& $LabPython src/main.py --part 4                  # CP4 — tấn công Red + Red Advance
+
+& $LabPython -m pytest tests/smoke tests/public -q
+& $LabPython scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
+
+### Kết quả
+
+| Phần | Kết quả |
+|---|---|
+| CP2 — Guardrails | Input: injection + topic filter. Output: che password, API key, DB host, SĐT, email |
+| CP3 — Pipeline Blue | Rate limiter → input guardrail → output guardrail + audit log + monitoring. Safe bị chặn `0/5`, attack bị chặn `7/7`, edge case bị chặn `2/3`, rate limit chặn `5/15` |
+| CP4 — Red (`gpt-4o-mini`) | 5 prompt (completion, translation/YAML, creative writing, confirmation, multi-step) → **leak `5/5`** |
+| CP4 — Red Advance | Leak `0/5` — cả 5 prompt bị chặn ở lớp regex input |
+| Tuỳ chọn | Thêm 3 rule Colang (role confusion, encoding, injection tiếng Việt) trong `src/guardrails/nemo_guardrails.py` |
+| Tự chấm | Smoke + public tests pass, `results_schema.ok = true`, `technical_failure = false` |
+
+> **Lưu ý về model Blue:** OpenRouter đã gỡ `liquid/lfm-2.5-2.6b:free` (HTTP 404 khi chạy `--part 3`). Vì vậy `outputs/results.json`, `audit_log.json` và `metrics.json` được sinh bằng chế độ `--blue-preview` (`llm_model: openrouter/free`, `run_mode: preview`) — file do chương trình sinh, không sửa tay.
+
+---
+
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  
 > 🎯 **Mục tiêu:** đóng vai **Blue Team** để học cách xây Guardrails phòng thủ, rồi đóng vai **Red Team** để tấn công agent **Red** hoặc **Red Advance**.  
 > ✅ Làm theo **Checkpoint 1 → 5** trong [`CHECKPOINTS.md`](CHECKPOINTS.md) · nộp theo [`SUBMISSION.md`](SUBMISSION.md).
@@ -20,7 +63,7 @@
 
 ## Chuẩn bị (trước / đầu buổi Lab)
 
-1. Máy có **Python 3.10+** (khuyến nghị 3.11 hoặc 3.12) và Git.
+1. Máy có **Python từ 3.10 đến 3.13** (khuyến nghị 3.11 hoặc 3.12) và Git. Phiên bản NeMo Guardrails của lab yêu cầu Python `<3.14`.
 2. Tài khoản GitHub cá nhân (để fork + đổi tên repo nộp).
 3. API keys:
    - **Blue (bắt buộc):** [OpenRouter](https://openrouter.ai/keys) — model cố định [`liquid/lfm-2.5-2.6b:free`](https://openrouter.ai/liquid/lfm-2.5-2.6b:free)
@@ -142,21 +185,23 @@ Thứ tự làm: **Setup → Blue Team (xây Guardrails phòng thủ) → Red Te
 **Windows (PowerShell):**
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 # Nếu bị chặn: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-Copy-Item .env.example .env
-pip install -r requirements.txt
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
+python -m pip install -r requirements.txt
 ```
 
 **macOS / Linux (bash):**
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-cp .env.example .env
-pip install -r requirements.txt
+[ -f .env ] || cp .env.example .env
+python -m pip install -r requirements.txt
 ```
+
+Nếu `.venv` đã được tạo bằng Python 3.14, đóng terminal đang dùng môi trường đó, đổi tên thư mục `.venv` cũ rồi tạo lại bằng lệnh trên. Giữ file `.env` để dùng lại API key.
 
 Điền `.env`: `OPENROUTER_API_KEY` + `RED_TEAM_PROVIDER=openai|gemini` (và key tương ứng).  
 Rồi mở [`CHECKPOINTS.md`](CHECKPOINTS.md) và làm lần lượt Checkpoint 1 → 5.

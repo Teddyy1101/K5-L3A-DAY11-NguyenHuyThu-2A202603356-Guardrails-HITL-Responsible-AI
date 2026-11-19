@@ -207,3 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 template-codelabs
+
+# Local CP3 preview artifacts
+/outputs/cp3-preview/

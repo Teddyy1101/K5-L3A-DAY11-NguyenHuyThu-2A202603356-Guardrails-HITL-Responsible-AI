@@ -105,7 +105,7 @@ Máy chạy được Python lab + có key **OpenRouter** (Blue) và key **OpenAI
    `K4-L3-DAY11-<HoVaTen>-<MSSV>-Guardrails-HITL-Responsible-AI`  
    (chi tiết + ví dụ trong [`SUBMISSION.md`](SUBMISSION.md)).  
 2. Clone repo (đã đổi tên) về máy; mở terminal tại **thư mục gốc** repo.
-3. Tạo & kích hoạt virtualenv, cài dependency.
+3. Tạo & kích hoạt virtualenv với Python 3.10–3.13, rồi cài dependency. Dùng Python 3.12 theo ví dụ bên dưới hoặc Python 3.11 như CI.
 4. Copy `.env.example` → `.env`:
   - **Blue (cố định):** `OPENROUTER_API_KEY` — model khóa `liquid/lfm-2.5-2.6b:free`
   - **Red (chọn một):** `RED_TEAM_PROVIDER=openai` + `OPENAI_API_KEY` (`gpt-4o-mini`)  
@@ -115,24 +115,24 @@ Máy chạy được Python lab + có key **OpenRouter** (Blue) và key **OpenAI
 **Windows (PowerShell):**
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 # Nếu bị chặn: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-Copy-Item .env.example .env
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 # Điền OPENROUTER_API_KEY + (OPENAI_API_KEY hoặc GOOGLE_API_KEY)
 python -m pip install -U pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 **macOS / Linux (bash):**
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-cp .env.example .env
+[ -f .env ] || cp .env.example .env
 # Điền OPENROUTER_API_KEY + (OPENAI_API_KEY hoặc GOOGLE_API_KEY)
 python -m pip install -U pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 

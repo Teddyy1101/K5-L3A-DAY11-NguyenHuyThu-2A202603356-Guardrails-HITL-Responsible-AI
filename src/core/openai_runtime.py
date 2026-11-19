@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from core.config import (
+    BLUE_PREVIEW_MODEL,
     get_red_model,
     get_red_provider,
     get_blue_model,
@@ -190,13 +191,14 @@ def create_blue_pair(
     input_hooks: list | None = None,
     output_hooks: list | None = None,
     temperature: float = 0.4,
+    preview: bool = False,
 ) -> tuple[OpenAIAgent, OpenAIRunner]:
-    """Blue Team — always OpenRouter liquid/lfm-2.5-2.6b:free."""
+    """Use the lab model, with a separate free-router path for CP3 previews."""
     return _make_pair(
         name=name,
         instruction=instruction,
         app_name=app_name,
-        model=get_blue_model(),
+        model=BLUE_PREVIEW_MODEL if preview else get_blue_model(),
         provider=get_blue_provider(),
         client_kwargs=blue_client_kwargs(),
         plugins=plugins,
